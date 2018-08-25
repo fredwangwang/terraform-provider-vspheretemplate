@@ -19,5 +19,8 @@ vendor
 .idea
 
 terraform-provider*
-*.tf*
+*.tf
+*.tfvars
+*.tfstate*
 
+temp.sh

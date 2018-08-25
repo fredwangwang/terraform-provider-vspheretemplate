@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/hashicorp/terraform/plugin"
 	"github.com/fredwangwang/terraform-provider-vsphereova/vsphere-ova"
+	"github.com/hashicorp/terraform/plugin"
 )
 
 func main() {
