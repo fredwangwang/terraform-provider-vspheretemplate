@@ -14,7 +14,6 @@ import (
 	"github.com/fredwangwang/terraform-provider-vsphereova/vsphere-ova/folder"
 	"github.com/fredwangwang/terraform-provider-vsphereova/vsphere-ova/hostsystem"
 	"github.com/fredwangwang/terraform-provider-vsphereova/vsphere-ova/resourcepool"
-	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/govc/flags"
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/object"
@@ -22,6 +21,7 @@ import (
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
 	"path"
+	"github.com/vmware/govmomi"
 )
 
 func resourceVsphereovaOvaTemplate() *schema.Resource {
@@ -32,10 +32,10 @@ func resourceVsphereovaOvaTemplate() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"datastore_id": {
-				Type:          schema.TypeString,
-				Required:      true,
-				ForceNew:      true,
-				Description:   "The ID of the virtual machine's datastore. The virtual machine configuration is placed here, along with any virtual disks that are created without datastores.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "The ID of the virtual machine's datastore. The virtual machine configuration is placed here, along with any virtual disks that are created without datastores.",
 			},
 			"folder": {
 				Type:        schema.TypeString,
@@ -88,7 +88,7 @@ func resourceVsphereovaOvaTemplateCreate(d *schema.ResourceData, m interface{}) 
 	if err != nil {
 		return fmt.Errorf("error locating datastore for VM: %s", err)
 	}
-	return fmt.Errorf("*************GOOD******************")
+
 	var hs *object.HostSystem
 	if v, ok := d.GetOk("host_system_id"); ok {
 		hsID := v.(string)
@@ -97,13 +97,14 @@ func resourceVsphereovaOvaTemplateCreate(d *schema.ResourceData, m interface{}) 
 			return fmt.Errorf("error locating host system at ID %q: %s", hsID, err)
 		}
 	}
+
 	poolID := d.Get("resource_pool_id").(string)
 	pool, err := resourcepool.FromID(client, poolID)
 	if err != nil {
 		return fmt.Errorf("could not find resource pool ID %q: %s", poolID, err)
 	}
 
-	ovaPath := d.Get("datastore_id").(string)
+	ovaPath := d.Get("ova_file").(string)
 	archive := archive.NewTapeArchive(ovaPath, archive.Opener{Downloader: client})
 
 	// load ova file
@@ -111,6 +112,7 @@ func resourceVsphereovaOvaTemplateCreate(d *schema.ResourceData, m interface{}) 
 	if err != nil {
 		return err
 	}
+
 	defer reader.Close()
 	ovfContent, err := ioutil.ReadAll(reader)
 	if err != nil {
@@ -141,15 +143,15 @@ func resourceVsphereovaOvaTemplateCreate(d *schema.ResourceData, m interface{}) 
 	//}
 
 	cisp := types.OvfCreateImportSpecParams{
-		//DiskProvisioning:   cmd.Options.DiskProvisioning,
-		EntityName: vAppName,
-		//IpAllocationPolicy: cmd.Options.IPAllocationPolicy,
-		//IpProtocol:         cmd.Options.IPProtocol,
-		//OvfManagerCommonParams: types.OvfManagerCommonParams{
-		//	DeploymentOption: cmd.Options.Deployment,
-		//	Locale:           "US"},
-		//PropertyMapping: cmd.Map(cmd.Options.PropertyMapping),
-		//NetworkMapping:  cmd.NetworkMap(e),
+		DiskProvisioning:   "thin",
+		EntityName:         vAppName,
+		IpAllocationPolicy: "dhcpPolicy",
+		IpProtocol:         "IPv4",
+		OvfManagerCommonParams: types.OvfManagerCommonParams{
+			DeploymentOption: "",
+			Locale:           "US"},
+		PropertyMapping: []types.KeyValue{},
+		NetworkMapping:  []types.OvfNetworkMapping{},
 	}
 
 	ovfManager := ovf.NewManager(client.Client)

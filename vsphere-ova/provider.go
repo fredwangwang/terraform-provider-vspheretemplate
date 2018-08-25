@@ -3,10 +3,15 @@ package vsphere_ova
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/terraform-providers/terraform-provider-vsphere/vsphere"
 	"path/filepath"
 	"os"
+	"time"
+	"fmt"
 )
+
+// defaultAPITimeout is a default timeout value that is passed to functions
+// requiring contexts, and other various waiters.
+const defaultAPITimeout = time.Minute * 60
 
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
@@ -88,26 +93,10 @@ func Provider() terraform.ResourceProvider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	c, err :=  vsphere.NewConfig(d)
-	client, err := c.Client()
-	return client, err
-	//c, err := vsphere.NewConfig(d)
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to load the config: %s", err)
-	//}
-	//
-	//client, err := c.Client()
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to retrive a govmomi client: %s", err)
-	//}
-	//
-	//log.Println(err, client)
-	//v := reflect.ValueOf(*client)
-	//for i := 0; i < v.NumField(); i++ {
-	//	if v.Field(i).Type() == reflect.TypeOf(&govmomi.Client{}) {
-	//		return v.Field(i).Elem().Interface().(*govmomi.Client), nil
-	//	}
-	//}
-	////
-	//return nil, fmt.Errorf("failed to retrive a govmomi client")
+	c, err := NewConfig(d)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load the config: %s", err)
+	}
+
+	return c.Client()
 }
