@@ -10,3 +10,14 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+vendor
+
+.terraform
+.govmomi
+
+.idea
+
+terraform-provider*
+*.tf*
+
