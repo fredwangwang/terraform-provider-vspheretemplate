@@ -1,4 +1,4 @@
-package vsphere_ova
+package vsphere_template
 
 import (
 	"fmt"
@@ -6,22 +6,23 @@ import (
 	"io/ioutil"
 	"log"
 
-	"bytes"
 	"context"
 	"errors"
-	"github.com/fredwangwang/terraform-provider-vsphereova/vsphere-ova/archive"
-	"github.com/fredwangwang/terraform-provider-vsphereova/vsphere-ova/datastore"
-	"github.com/fredwangwang/terraform-provider-vsphereova/vsphere-ova/folder"
-	"github.com/fredwangwang/terraform-provider-vsphereova/vsphere-ova/hostsystem"
-	"github.com/fredwangwang/terraform-provider-vsphereova/vsphere-ova/resourcepool"
-	"github.com/vmware/govmomi/govc/flags"
+	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/archive"
+	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/datastore"
+	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/folder"
+	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/hostsystem"
+	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/resourcepool"
+	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/ovf"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
-	"path"
-	"github.com/vmware/govmomi"
+	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/virtualmachine"
+	"bytes"
+	options2 "github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/options"
+	"github.com/vmware/govmomi/find"
 )
 
 func resourceVsphereovaOvaTemplate() *schema.Resource {
@@ -69,7 +70,7 @@ func resourceVsphereovaOvaTemplate() *schema.Resource {
 				ForceNew:    true,
 				Description: "The ID of a resource pool to put the virtual machine in.",
 			},
-			"ova_file": {
+			"ova_file_path": {
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
@@ -104,10 +105,10 @@ func resourceVsphereovaOvaTemplateCreate(d *schema.ResourceData, m interface{}) 
 		return fmt.Errorf("could not find resource pool ID %q: %s", poolID, err)
 	}
 
-	ovaPath := d.Get("ova_file").(string)
+	ovaPath := d.Get("ova_file_path").(string)
 	archive := archive.NewTapeArchive(ovaPath, archive.Opener{Downloader: client})
 
-	// load ova file
+	// load ovf file
 	reader, _, err := archive.Open("*.ovf")
 	if err != nil {
 		return err
@@ -124,34 +125,9 @@ func resourceVsphereovaOvaTemplateCreate(d *schema.ResourceData, m interface{}) 
 	}
 
 	// set appliance properties
-	vAppName := "Generic Virtual Appliance"
-	if e.VirtualSystem != nil {
-		vAppName = e.VirtualSystem.ID
-		if e.VirtualSystem.Name != nil {
-			vAppName = *e.VirtualSystem.Name
-		}
-	}
-
-	//// Override vAppName from options if specified
-	//if cmd.Options.Name != nil {
-	//	vAppName = *cmd.Options.Name
-	//}
-	//
-	//// Override vAppName from arguments if specified
-	//if cmd.Name != "" {
-	//	vAppName = cmd.Name
-	//}
-
-	cisp := types.OvfCreateImportSpecParams{
-		DiskProvisioning:   "thin",
-		EntityName:         vAppName,
-		IpAllocationPolicy: "dhcpPolicy",
-		IpProtocol:         "IPv4",
-		OvfManagerCommonParams: types.OvfManagerCommonParams{
-			DeploymentOption: "",
-			Locale:           "US"},
-		PropertyMapping: []types.KeyValue{},
-		NetworkMapping:  []types.OvfNetworkMapping{},
+	cisp, err := createImportSpecParams(d, e, client)
+	if err != nil {
+		return err
 	}
 
 	ovfManager := ovf.NewManager(client.Client)
@@ -171,14 +147,7 @@ func resourceVsphereovaOvaTemplateCreate(d *schema.ResourceData, m interface{}) 
 		}
 	}
 
-	//if cmd.Options.Annotation != "" {
-	//	switch s := spec.ImportSpec.(type) {
-	//	case *types.VirtualMachineImportSpec:
-	//		s.ConfigSpec.Annotation = cmd.Options.Annotation
-	//	case *types.VirtualAppImportSpec:
-	//		s.VAppConfigSpec.Annotation = cmd.Options.Annotation
-	//	}
-	//}
+	// TODO: add annotation @ importx/ovf.go:288
 
 	folder, err := folder.FromName(client, d.Get("folder").(string))
 	if err != nil {
@@ -218,10 +187,61 @@ func resourceVsphereovaOvaTemplateCreate(d *schema.ResourceData, m interface{}) 
 	return vm.MarkAsTemplate(ctx)
 }
 
-//func importOva(archive importx.Archive, fpath string) (interface{}, error) {
-//	//ctx := context.TODO()
-//
-//}
+func createImportSpecParams(
+	d *schema.ResourceData,
+	envelope *ovf.Envelope,
+	c *govmomi.Client) (types.OvfCreateImportSpecParams, error) {
+	vAppName := d.Get("name").(string)
+	options, err := options2.FromInterface(d.Get("options"))
+
+	propertyMapping := func(op []options2.Property) (p []types.KeyValue) {
+		for _, v := range op {
+			p = append(p, v.KeyValue)
+		}
+		return
+	}
+
+	networkMapping := func(e *ovf.Envelope) (p []types.OvfNetworkMapping) {
+		ctx := context.TODO()
+		finder := find.NewFinder(c.Client, false)
+
+		networks := map[string]string{}
+
+		if e.Network != nil {
+			for _, net := range e.Network.Networks {
+				networks[net.Name] = net.Name
+			}
+		}
+
+		for _, net := range options.NetworkMapping {
+			networks[net.Name] = net.Network
+		}
+
+		for src, dst := range networks {
+			if net, err := finder.Network(ctx, dst); err == nil {
+				p = append(p, types.OvfNetworkMapping{
+					Name:    src,
+					Network: net.Reference(),
+				})
+			}
+		}
+		return
+	}
+
+	cisp := types.OvfCreateImportSpecParams{
+		DiskProvisioning:   options.DiskProvisioning,
+		EntityName:         vAppName,
+		IpAllocationPolicy: options.IPAllocationPolicy,
+		IpProtocol:         options.IPProtocol,
+		OvfManagerCommonParams: types.OvfManagerCommonParams{
+			DeploymentOption: options.Deployment,
+			Locale:           "US"},
+		PropertyMapping: propertyMapping(options.PropertyMapping),
+		NetworkMapping:  networkMapping(envelope),
+	}
+
+	return cisp, err
+}
 
 func upload(ctx context.Context, lease *nfc.Lease, item nfc.FileItem, archive archive.Archive) error {
 	file := item.Path
@@ -232,22 +252,50 @@ func upload(ctx context.Context, lease *nfc.Lease, item nfc.FileItem, archive ar
 	}
 	defer f.Close()
 
-	tty, _ := flags.NewOutputFlag(ctx)
-	logger := tty.ProgressLogger(fmt.Sprintf("Uploading %s... ", path.Base(file)))
-	defer logger.Wait()
-
 	opts := soap.Upload{
 		ContentLength: size,
-		Progress:      logger,
 	}
 
 	return lease.Upload(ctx, item, f, opts)
 }
 
 func resourceVsphereovaOvaTemplateRead(d *schema.ResourceData, m interface{}) error {
-	return fmt.Errorf("ererer")
+	client := m.(*govmomi.Client)
+
+	vm, err := virtualmachine.FromUUID(client, d.Id())
+	if err != nil {
+		return err
+	}
+
+	if vm == nil {
+		d.SetId("")
+	}
+
+	return nil
 }
 
 func resourceVsphereovaOvaTemplateDelete(d *schema.ResourceData, m interface{}) error {
+	ctx := context.Background()
+	client := m.(*govmomi.Client)
+
+	id := d.Id()
+
+	vm, err := virtualmachine.FromUUID(client, id)
+	if err != nil || vm == nil {
+		return fmt.Errorf("cannot locate virtual machine with UUID %q", id)
+	}
+
+	task, err := vm.Destroy(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = task.Wait(ctx)
+	if err != nil {
+		return err
+	}
+
+	d.SetId("")
+	log.Printf("[DEBUG] %q: Delete complete", id)
 	return nil
 }
