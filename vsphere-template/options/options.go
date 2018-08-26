@@ -1,10 +1,10 @@
 package options
 
 import (
-	"github.com/vmware/govmomi/vim25/types"
-	"github.com/vmware/govmomi/ovf"
 	"encoding/json"
 	"fmt"
+	"github.com/vmware/govmomi/ovf"
+	"github.com/vmware/govmomi/vim25/types"
 )
 
 type Property struct {

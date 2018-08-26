@@ -6,32 +6,38 @@ import (
 	"io/ioutil"
 	"log"
 
+	"bytes"
 	"context"
 	"errors"
 	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/archive"
+	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/datacenter"
 	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/datastore"
 	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/folder"
 	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/hostsystem"
 	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/resourcepool"
+	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/virtualmachine"
 	"github.com/vmware/govmomi"
+	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/nfc"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/ovf"
 	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
-	"github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/virtualmachine"
-	"bytes"
-	options2 "github.com/fredwangwang/terraform-provider-vspheretemplate/vsphere-template/options"
-	"github.com/vmware/govmomi/find"
 )
 
-func resourceVsphereovaOvaTemplate() *schema.Resource {
+func resourceVspheretemplateOvaTemplate() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceVsphereovaOvaTemplateCreate,
-		Read:   resourceVsphereovaOvaTemplateRead,
-		Delete: resourceVsphereovaOvaTemplateDelete,
+		Create: resourceVspheretemplateOvaTemplateCreate,
+		Read:   resourceVspheretemplateOvaTemplateRead,
+		Delete: resourceVspheretemplateOvaTemplateDelete,
 
 		Schema: map[string]*schema.Schema{
+			"datacenter_id": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: "The ID of the virtual machine's datacenter.",
+			},
 			"datastore_id": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -58,11 +64,23 @@ func resourceVsphereovaOvaTemplate() *schema.Resource {
 				ForceNew:    true,
 				Required:    true,
 			},
-			"options": {
-				Type:        schema.TypeMap,
+			"network_mapping": {
+				Type:        schema.TypeList,
 				Optional:    true,
 				ForceNew:    true,
-				Description: "If the ova file provided requires any special options to be set, set here.",
+				Description: "If the ova file provided requires any network mapping to be set, set here.",
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"name": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"network": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+					},
+				},
 			},
 			"resource_pool_id": {
 				Type:        schema.TypeString,
@@ -80,7 +98,7 @@ func resourceVsphereovaOvaTemplate() *schema.Resource {
 	}
 }
 
-func resourceVsphereovaOvaTemplateCreate(d *schema.ResourceData, m interface{}) error {
+func resourceVspheretemplateOvaTemplateCreate(d *schema.ResourceData, m interface{}) error {
 	ctx := context.Background()
 	client := m.(*govmomi.Client)
 
@@ -182,6 +200,11 @@ func resourceVsphereovaOvaTemplateCreate(d *schema.ResourceData, m interface{}) 
 
 	vm := object.NewVirtualMachine(client.Client, moref)
 	d.SetId(vm.UUID(ctx))
+	hs, err = vm.HostSystem(ctx)
+	if err != nil {
+		return err
+	}
+	d.Set("host_system_id", hs.Reference().Value)
 
 	log.Printf("[INFO] Marking VM as template...\n")
 	return vm.MarkAsTemplate(ctx)
@@ -191,19 +214,19 @@ func createImportSpecParams(
 	d *schema.ResourceData,
 	envelope *ovf.Envelope,
 	c *govmomi.Client) (types.OvfCreateImportSpecParams, error) {
-	vAppName := d.Get("name").(string)
-	options, err := options2.FromInterface(d.Get("options"))
+	var err error
 
-	propertyMapping := func(op []options2.Property) (p []types.KeyValue) {
-		for _, v := range op {
-			p = append(p, v.KeyValue)
-		}
-		return
-	}
+	vAppName := d.Get("name").(string)
 
 	networkMapping := func(e *ovf.Envelope) (p []types.OvfNetworkMapping) {
 		ctx := context.TODO()
 		finder := find.NewFinder(c.Client, false)
+		dc, err1 := datacenter.FromIDOrDefault(c, d.Get("datacenter_id").(string))
+		if err1 != nil {
+			err = err1
+			return
+		}
+		finder.SetDatacenter(dc)
 
 		networks := map[string]string{}
 
@@ -213,31 +236,30 @@ func createImportSpecParams(
 			}
 		}
 
-		for _, net := range options.NetworkMapping {
-			networks[net.Name] = net.Network
+		networkMappings := d.Get("network_mapping").([]interface{})
+
+		for _, net := range networkMappings {
+			netMap := net.(map[string]interface{})
+			networks[netMap["name"].(string)] = netMap["network"].(string)
 		}
 
 		for src, dst := range networks {
-			if net, err := finder.Network(ctx, dst); err == nil {
+			if net, err1 := finder.Network(ctx, dst); err1 == nil {
 				p = append(p, types.OvfNetworkMapping{
 					Name:    src,
 					Network: net.Reference(),
 				})
+			} else {
+				err = err1
+				return
 			}
 		}
 		return
 	}
 
 	cisp := types.OvfCreateImportSpecParams{
-		DiskProvisioning:   options.DiskProvisioning,
-		EntityName:         vAppName,
-		IpAllocationPolicy: options.IPAllocationPolicy,
-		IpProtocol:         options.IPProtocol,
-		OvfManagerCommonParams: types.OvfManagerCommonParams{
-			DeploymentOption: options.Deployment,
-			Locale:           "US"},
-		PropertyMapping: propertyMapping(options.PropertyMapping),
-		NetworkMapping:  networkMapping(envelope),
+		EntityName:     vAppName,
+		NetworkMapping: networkMapping(envelope),
 	}
 
 	return cisp, err
@@ -259,7 +281,7 @@ func upload(ctx context.Context, lease *nfc.Lease, item nfc.FileItem, archive ar
 	return lease.Upload(ctx, item, f, opts)
 }
 
-func resourceVsphereovaOvaTemplateRead(d *schema.ResourceData, m interface{}) error {
+func resourceVspheretemplateOvaTemplateRead(d *schema.ResourceData, m interface{}) error {
 	client := m.(*govmomi.Client)
 
 	vm, err := virtualmachine.FromUUID(client, d.Id())
@@ -274,7 +296,7 @@ func resourceVsphereovaOvaTemplateRead(d *schema.ResourceData, m interface{}) er
 	return nil
 }
 
-func resourceVsphereovaOvaTemplateDelete(d *schema.ResourceData, m interface{}) error {
+func resourceVspheretemplateOvaTemplateDelete(d *schema.ResourceData, m interface{}) error {
 	ctx := context.Background()
 	client := m.(*govmomi.Client)
 

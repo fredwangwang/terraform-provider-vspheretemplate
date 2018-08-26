@@ -84,7 +84,7 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"vsphereova_ova_template": resourceVsphereovaOvaTemplate(),
+			"vspheretemplate_ova_template": resourceVspheretemplateOvaTemplate(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
