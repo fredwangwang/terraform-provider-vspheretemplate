@@ -2,14 +2,6 @@
 
 
 [[projects]]
-  digest = "1:f3b6664d93ffaee13d93f1dcab4f30ce64204c4b24dda73695ecc8e686645d1b"
-  name = "github.com/Sirupsen/logrus"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "d26492970760ca5d33129d2d799e34be5c4782eb"
-  version = "v0.11.0"
-
-[[projects]]
   digest = "1:dc2ba13235a4c8f80a40599575a3f10acb4736cb372f1a68b88333c06564471d"
   name = "github.com/agext/levenshtein"
   packages = ["."]
@@ -102,14 +94,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "4a1e882c79dcf4ec00d2e29fac74b9c8938d5052"
-
-[[projects]]
-  digest = "1:a2c1d0e43bd3baaa071d1b9ed72c27d78169b2b269f71c105ac4ba34b1be4a39"
-  name = "github.com/davecgh/go-spew"
-  packages = ["spew"]
-  pruneopts = "UT"
-  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
-  version = "v1.1.0"
 
 [[projects]]
   digest = "1:5abd6a22805b1919f6a6bca0ae58b13cef1f3412812f38569978f43ef02743d4"
@@ -245,15 +229,7 @@
   revision = "fa9f258a92500514cc8e9c67020487709df92432"
 
 [[projects]]
-  branch = "master"
-  digest = "1:ce3f7860fd68bd2dd4c3735e2aed8c9de7c7d05bd6ad7d97a6bedcf4fe7b84fb"
-  name = "github.com/hashicorp/logutils"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "0dc08b1671f34c4250ce212759ebd880f743d883"
-
-[[projects]]
-  digest = "1:6d63bd58d769c3406d5432bac4d2e4acf457f41cbe58b2e0ee8de462668df891"
+  digest = "1:cf72e074d479f68767f8db7694b97010be0cf54fdc2f247a5d8526812cb40760"
   name = "github.com/hashicorp/terraform"
   packages = [
     "config",
@@ -262,14 +238,9 @@
     "config/module",
     "dag",
     "flatmap",
-    "helper/config",
     "helper/hashcode",
     "helper/hilmapstructure",
-    "helper/logging",
-    "helper/resource",
     "helper/schema",
-    "helper/structure",
-    "helper/validation",
     "httpclient",
     "moduledeps",
     "plugin",
@@ -302,23 +273,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "0b12d6b5"
-
-[[projects]]
-  branch = "govmomi"
-  digest = "1:bef68f026fa706063533a3763e96a5d01cf468c9636befb59e8cb5431641a97c"
-  name = "github.com/kr/pretty"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "2ee9d7453c02ef7fa518a83ae23644eb8872186a"
-  source = "https://github.com/dougm/pretty"
-
-[[projects]]
-  digest = "1:15b5cc79aad436d47019f814fde81a10221c740dc8ddf769221a65097fb6c2e9"
-  name = "github.com/kr/text"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "e2ffdb16a802fe2bb95e2e35ff34f0e53aeef34f"
-  version = "v0.1.0"
 
 [[projects]]
   digest = "1:d4d17353dbd05cb52a2a52b7fe1771883b682806f68db442b436294926bbfafb"
@@ -395,13 +349,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:0599213459e7ef9398ab20b26722ebeaeed4d9d85255005ddf0a5c47f8c02670"
-  name = "github.com/pkg/errors"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "c605e284fe17294bda444b34710735b29d1a9d90"
-
-[[projects]]
   digest = "1:4d76324ccff5546792b4274c5fe1639bc5983c533c85d1b4be2168d57daabdf0"
   name = "github.com/posener/complete"
   packages = [
@@ -413,46 +360,6 @@
   pruneopts = "UT"
   revision = "98eb9847f27ba2008d380a32c98be474dea55bdf"
   version = "v1.1.1"
-
-[[projects]]
-  digest = "1:bd1ae00087d17c5a748660b8e89e1043e1e5479d0fea743352cda2f8dd8c4f84"
-  name = "github.com/spf13/afero"
-  packages = [
-    ".",
-    "mem",
-  ]
-  pruneopts = "UT"
-  revision = "787d034dfe70e44075ccc060d346146ef53270ad"
-  version = "v1.1.1"
-
-[[projects]]
-  digest = "1:fc7fd1847421a9df589a992e4406b839d5384a4450a9651303f037fc118ccfab"
-  name = "github.com/terraform-providers/terraform-provider-vsphere"
-  packages = [
-    "vsphere",
-    "vsphere/internal/helper/clustercomputeresource",
-    "vsphere/internal/helper/computeresource",
-    "vsphere/internal/helper/customattribute",
-    "vsphere/internal/helper/datastore",
-    "vsphere/internal/helper/dvportgroup",
-    "vsphere/internal/helper/envbrowse",
-    "vsphere/internal/helper/folder",
-    "vsphere/internal/helper/hostsystem",
-    "vsphere/internal/helper/network",
-    "vsphere/internal/helper/nsx",
-    "vsphere/internal/helper/provider",
-    "vsphere/internal/helper/resourcepool",
-    "vsphere/internal/helper/storagepod",
-    "vsphere/internal/helper/structure",
-    "vsphere/internal/helper/vappcontainer",
-    "vsphere/internal/helper/viapi",
-    "vsphere/internal/helper/virtualmachine",
-    "vsphere/internal/virtualdevice",
-    "vsphere/internal/vmworkflow",
-  ]
-  pruneopts = "UT"
-  revision = "01476ff8c9fc4d58ec97d30b542ff8202d29e83a"
-  version = "v1.7.0"
 
 [[projects]]
   digest = "1:4aeb3860275fa1fd60cccfb5a6ef85da438bf17402e1e84412ade4d4b55066a0"
@@ -469,14 +376,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1e035497a699459e8094cfeab134c178de66ba2a299c139b2e1ffdd4fc56baea"
+  digest = "1:8ea23912e1545aceaa7c33e7c2a5d67defe605ccda7ae65d2cc1dbe0b171ca6c"
   name = "github.com/vmware/govmomi"
   packages = [
     ".",
-    "event",
     "find",
-    "govc/flags",
-    "license",
     "list",
     "nfc",
     "object",
@@ -484,7 +388,6 @@
     "property",
     "session",
     "task",
-    "view",
     "vim25",
     "vim25/debug",
     "vim25/methods",
@@ -496,14 +399,6 @@
   ]
   pruneopts = "UT"
   revision = "ae01abbdd5ccaec54939930246bbce7edbf07337"
-
-[[projects]]
-  digest = "1:73fc5ec5a27924b141c08e36673c020eafdb26dbc299a50128e19d440e26b21b"
-  name = "github.com/vmware/vic"
-  packages = ["pkg/vsphere/tags"]
-  pruneopts = "UT"
-  revision = "b3a619231503620476d5553e59f70287972f1905"
-  version = "v1.4.1"
 
 [[projects]]
   digest = "1:d9fcd74cc5680d34171ba3e5ed541c5de161f326739f0c87635101ea7d158f21"
@@ -638,16 +533,17 @@
     "github.com/hashicorp/terraform/helper/schema",
     "github.com/hashicorp/terraform/plugin",
     "github.com/hashicorp/terraform/terraform",
-    "github.com/spf13/afero",
-    "github.com/terraform-providers/terraform-provider-vsphere/vsphere",
     "github.com/vmware/govmomi",
     "github.com/vmware/govmomi/find",
-    "github.com/vmware/govmomi/govc/flags",
     "github.com/vmware/govmomi/nfc",
     "github.com/vmware/govmomi/object",
     "github.com/vmware/govmomi/ovf",
+    "github.com/vmware/govmomi/session",
+    "github.com/vmware/govmomi/vim25",
+    "github.com/vmware/govmomi/vim25/debug",
     "github.com/vmware/govmomi/vim25/soap",
     "github.com/vmware/govmomi/vim25/types",
+    "golang.org/x/net/context",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

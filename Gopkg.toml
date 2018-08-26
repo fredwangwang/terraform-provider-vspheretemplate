@@ -27,15 +27,7 @@
 
 [[constraint]]
   name = "github.com/hashicorp/terraform"
-  version = "0.11.7"
-
-[[constraint]]
-  name = "github.com/spf13/afero"
-  version = "1.1.1"
-
-[[constraint]]
-  name = "github.com/terraform-providers/terraform-provider-vsphere"
-  version = "1.7.0"
+  version = "0.11.8"
 
 [[constraint]]
   name = "github.com/vmware/govmomi"
