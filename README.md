@@ -118,13 +118,14 @@ clone {
 does not work.
 
 If you are interested, here is the trace:
-```
-resource_vsphere_virtual_machine.go:652
-resource_vsphere_virtual_machine.go:708
-virtual_machine_clone_subresource.go:60
-virtual_machine_clone_subresource.go:65
-```
 
+[resource_vsphere_virtual_machine.go:652](https://github.com/terraform-providers/terraform-provider-vsphere/blob/3bccdebdd9826fb8d191f7e71a9eeda2db81e97e/vsphere/resource_vsphere_virtual_machine.go#L652)
+
+[resource_vsphere_virtual_machine.go:708](https://github.com/terraform-providers/terraform-provider-vsphere/blob/3bccdebdd9826fb8d191f7e71a9eeda2db81e97e/vsphere/resource_vsphere_virtual_machine.go#L708)
+
+[virtual_machine_clone_subresource.go:60](https://github.com/terraform-providers/terraform-provider-vsphere/blob/3bccdebdd9826fb8d191f7e71a9eeda2db81e97e/vsphere/internal/vmworkflow/virtual_machine_clone_subresource.go#L60)
+
+[virtual_machine_clone_subresource.go:65](https://github.com/terraform-providers/terraform-provider-vsphere/blob/3bccdebdd9826fb8d191f7e71a9eeda2db81e97e/vsphere/internal/vmworkflow/virtual_machine_clone_subresource.go#L65)
 
 ## Credit
 terraform-provider-vsphere: Borrowed `config.go` to talk to vsphere and generally how to code a provider
