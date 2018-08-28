@@ -38,7 +38,7 @@ documentation. This provider uses the same config as the official vsphere one.
 ### network_mapping:
 sample:
 ```
-// the format of the network_mapping is the same as the one in the `govc import.spec /path/to/image.ova | jq`
+// the format of the network_mapping is the same as the one in the `govc import.spec /path/to/image.ova`
 network_mapping = {
 	name = "vm network"
 	network = "some-network"
@@ -80,7 +80,7 @@ resource "vspheretemplate_ova_template" "om_template" {
   datastore_id = "${data.vsphere_datastore.ds.id}"
   resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
   folder = "${var.vcenter_template_folder}"
-  ova_file_path = "/Users/huan/Downloads/minimal.ova"
+  ova_file_path = "/path/to/image.ova"
 }
 
 variable "vcenter_user" {}
