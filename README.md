@@ -6,7 +6,7 @@ so I created this toy provider to upload the ova image to vSphere.
 ## Provider Configuration:
 There are three properties that are required: `user`, `password`, `vsphere_server`.
 For more provider configuration, see the official
-[terraform-provider-vsphere](https://www.terraform.io/docs/providers/vsphere/index.html)
+[terraform-provider-vsphere](https://www.terraform.io/docs/providers/vsphere/index.html#argument-reference)
 documentation. This provider uses the same config as the official vsphere one.
 
 ## Resources:
