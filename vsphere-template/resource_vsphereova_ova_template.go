@@ -46,7 +46,8 @@ func resourceVspheretemplateOvaTemplate() *schema.Resource {
 			},
 			"folder": {
 				Type:        schema.TypeString,
-				Optional:    true,
+				// TODO: make this optional
+				Required:    true,
 				ForceNew:    true,
 				Description: "The name of the folder to locate the virtual machine in.",
 				//StateFunc:   folder.NormalizePath,
