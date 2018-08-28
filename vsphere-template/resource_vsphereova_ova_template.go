@@ -94,6 +94,11 @@ func resourceVspheretemplateOvaTemplate() *schema.Resource {
 				ForceNew:    true,
 				Description: "path to the ova file.",
 			},
+			"guest_id": {
+				Type:        schema.TypeString,
+				Description: "The guest ID of the virtual machine.",
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -200,11 +205,22 @@ func resourceVspheretemplateOvaTemplateCreate(d *schema.ResourceData, m interfac
 
 	vm := object.NewVirtualMachine(client.Client, moref)
 	d.SetId(vm.UUID(ctx))
+
 	hs, err = vm.HostSystem(ctx)
 	if err != nil {
 		return err
 	}
 	d.Set("host_system_id", hs.Reference().Value)
+
+	props, err := virtualmachine.Properties(vm)
+	if err != nil {
+		return fmt.Errorf("error fetching virtual machine properties: %s", err)
+	}
+	if props.Config == nil {
+		return fmt.Errorf("no configuration returned for virtual machine %q", vm.InventoryPath)
+	}
+
+	d.Set("guest_id", props.Config.GuestId)
 
 	log.Printf("[INFO] Marking VM as template...\n")
 	return vm.MarkAsTemplate(ctx)

@@ -6,6 +6,7 @@ import (
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"log"
+	"github.com/vmware/govmomi/vim25/mo"
 )
 
 // FromUUID locates a virtualMachine by its UUID.
@@ -43,4 +44,16 @@ func FromUUID(client *govmomi.Client, uuid string) (*object.VirtualMachine, erro
 	// anyway.
 	log.Printf("[DEBUG] VM %q found for UUID %q", vm.(*object.VirtualMachine).InventoryPath, uuid)
 	return vm.(*object.VirtualMachine), nil
+}
+
+func Properties(vm *object.VirtualMachine) (*mo.VirtualMachine, error) {
+	log.Printf("[DEBUG] Fetching properties for VM %q", vm.InventoryPath)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var props mo.VirtualMachine
+	if err := vm.Properties(ctx, vm.Reference(), nil, &props); err != nil {
+		return nil, err
+	}
+	return &props, nil
 }
